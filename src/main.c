@@ -1,8 +1,11 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <fcntl.h>
+#include <string.h>
 #include "scheduler.h"
 #include "acxius_key.h"
+#include "acxius_mail.h"
+#include "acxius_wifi.h"
 
 int main() {
   SchedulerData data;
@@ -23,17 +26,23 @@ int main() {
         sendKey(&data);
       }
     }
+
     updateDate(&data);
 
-    printf("Generate: ['%s', '%s, '%s']\n",
+    printf("Generate: ['%s', '%s', '%s']\n",
       data.msg,
       data.date,
       data.send
     );
 
+    if (strcmp(data.send, "sim") == 0) {
+      enable_wifi();
+      
+      sendEmail("email@", "ACXIUS Scheduler Update", &data);
+    }
+
     sleep(5);
   }
 
   return 0;
-  
 }
