@@ -3,6 +3,6 @@
 
 #include "scheduler.h"
 
-void sendEmail(const char *to, const char *subject, SchedulerData *data);
+void sendEmail(const char **to_list, int count, const char *subject, SchedulerData *data);
 
 #endif

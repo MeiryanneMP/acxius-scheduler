@@ -4,20 +4,19 @@
 #include <curl/curl.h>
 #include "acxius_mail.h"
 
-void sendEmail(const char *to, const char *subject, SchedulerData *data)
+void sendEmail(const char **to_list, int count, const char *subject, SchedulerData *data)
 {
     CURL *curl;
     CURLcode res = CURLE_OK;
     struct curl_slist *recipients = NULL;
     char message[1024];
-    
+
     snprintf(message, sizeof(message),
              "From: %s\n"
-             "To: <%s>\n"
              "Subject: %s\n\n"
              "Generate: ['%s', '%s', '%s']\n",
-             getenv("ACX_EMAIL"), to, subject, data->msg, data->date, data->send);
-    
+             getenv("ACX_EMAIL"), subject, data->msg, data->date, data->send);
+
     curl = curl_easy_init();
     if(curl) {
         const char *email = getenv("ACX_EMAIL");
@@ -29,10 +28,12 @@ void sendEmail(const char *to, const char *subject, SchedulerData *data)
         curl_easy_setopt(curl, CURLOPT_PASSWORD, password);
         curl_easy_setopt(curl, CURLOPT_URL, "smtp://smtp.gmail.com:465");
         curl_easy_setopt(curl, CURLOPT_MAIL_FROM, email);
-        
-        recipients = curl_slist_append(recipients, to);
-        curl_easy_setopt(curl, CURLOPT_MAIL_RCPT, recipients);
 
+        for (int i = 0; i < count; i++) {
+            recipients = curl_slist_append(recipients, to_list[i]);
+        }
+
+        curl_easy_setopt(curl, CURLOPT_MAIL_RCPT, recipients);
         curl_easy_setopt(curl, CURLOPT_USE_SSL, (long)CURLUSESSL_ALL);
         curl_easy_setopt(curl, CURLOPT_READDATA, message);
         curl_easy_setopt(curl, CURLOPT_READFUNCTION, NULL);
@@ -42,7 +43,7 @@ void sendEmail(const char *to, const char *subject, SchedulerData *data)
         if(res != CURLE_OK) {
             fprintf(stderr, "curl_easy_perform() failed: %s\n", curl_easy_strerror(res));
         } else {
-            printf("Email sent to: %s\n", to);
+            printf("Email sent to %d recipients\n", count);
         }
 
         curl_slist_free_all(recipients);
